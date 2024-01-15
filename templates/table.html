@@ -1,0 +1,28 @@
+<table class="table table-dark">
+    <thead>
+        <tr>
+            <th scope="col">Series {{.Id}}</th>
+        </tr>
+    </thead>
+    <form id="{{.Id}}"
+        hx-swap="outerHTML"
+        hx-target="#chart"
+        hx-put="/series/{{.Id}}"
+        hx-trigger="keyup[keyCode==13] from:input">
+        <tbody>
+            {{ range $index, $element := .Series}}
+            <tr>
+                <td>
+                    <input id="1,{{$index}}"
+                        name="1,{{$index}}"
+                        type="text"
+                        class="form-control border-0"
+                        value="{{.}}"
+                        autocomplete="off">
+                    </input>
+                </td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </form>
+</table>

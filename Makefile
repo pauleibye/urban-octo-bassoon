@@ -1,5 +1,11 @@
-run:
+run-app:
 	go run main.go
+
+start-pg:
+	docker compose -f build/docker-compose.yml up --build -d postgres
+
+stop-pg:
+	docker compose -f build/docker-compose.yml down postgres
 
 docker-build: 
 	docker build --tag pauleibye/urban-octo-bassoon .
