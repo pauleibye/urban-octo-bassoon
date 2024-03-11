@@ -35,13 +35,13 @@ type controller struct {
 }
 
 func (c controller) Index(ctx echo.Context) error {
-	series, render, err := c.uc.GetSeries(1)
+	render, err := c.uc.GetChart(1)
 	if err != nil {
 		fmt.Println("paultest err: ", err)
 		return ctx.JSON(http.StatusInternalServerError, err)
 	}
 
-	return ctx.Render(http.StatusOK, "index.html", SeriesResponse{Id: series.Name, Render: render})
+	return ctx.Render(http.StatusOK, "index.html", SeriesResponse{Id: "paulchart", Render: render})
 }
 
 // type putSeriesRequest struct {

@@ -45,10 +45,28 @@ func generateLineItems() []opts.LineData {
 }
 
 var schema = `
+CREATE TABLE if not exists chart(
+	id INT GENERATED ALWAYS AS IDENTITY,
+	name VARCHAR(255),
+	primary key(id)
+);
+
 CREATE TABLE if not exists series(
-   id INT GENERATED ALWAYS AS IDENTITY,
-   name VARCHAR(255),
-   PRIMARY KEY(id)
+   	id INT GENERATED ALWAYS AS IDENTITY,
+	name VARCHAR(255),
+   	PRIMARY KEY(id)
+);
+
+CREATE TABLE if not exists chart_series(
+	chart_id INT,
+	series_id INT,
+	primary key(chart_id, series_id),
+	constraint fk_chart
+		foreign key(chart_id) 
+			references chart(id),
+	constraint fk_series
+		foreign key(series_id) 
+			references series(id)
 );
 
 CREATE TABLE if not exists point(
@@ -61,9 +79,6 @@ CREATE TABLE if not exists point(
 		foreign key(series_id) 
 			references series(id)
 );
-
-INSERT INTO series (name) VALUES ('paultest1');
-INSERT INTO point (series_id, time, value) VALUES (1, '2021-01-01', 2.0);
 `
 
 func main() {

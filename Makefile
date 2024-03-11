@@ -1,6 +1,10 @@
 run-app:
 	go run main.go
 
+debug-app:
+	go build -gcflags=all="-N -l" ./
+	./urban-octo-bassoon
+
 start-pg:
 	docker compose -f build/docker-compose.yml up --build -d postgres
 

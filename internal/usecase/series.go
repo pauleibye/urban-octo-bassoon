@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"strconv"
 	"time"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
@@ -13,23 +14,28 @@ import (
 	"github.com/pauleibye/urban-octo-bassoon/pkg/util"
 )
 
-func (u *Usecase) GetSeries(seriesId int) (*entity.Series, template.HTML, error) {
+func (u *Usecase) GetChart(chartId int) (template.HTML, error) {
 	fmt.Println("paultest GetSeries")
-	series, err := db.GetSeries(u.DB, seriesId)
+
+	series, err := db.GetSeriesOfChart(u.DB, chartId)
 	if err != nil {
-		return nil, template.HTML(""), err
+		return template.HTML(""), err
 	}
 
-	points, err := db.GetPointsOfSeries(u.DB, seriesId)
-	if err != nil {
-		return nil, template.HTML(""), err
+	pointsOfSeries := make(map[entity.Series][]entity.Point)
+	for _, s := range series {
+		points, err := db.GetPointsOfSeries(u.DB, s.Id)
+		if err != nil {
+			return template.HTML(""), err
+		}
+		pointsOfSeries[s] = points
 	}
 
-	bar := charts.NewLine()
-	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
-		Title: series.Name,
-	}),
-		charts.WithColorsOpts(opts.Colors{"red", "green"}),
+	plot := charts.NewLine()
+	plot.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{
+			Title: strconv.Itoa(chartId),
+		}),
 		charts.WithInitializationOpts(
 			opts.Initialization{
 				Theme:           "dark",
@@ -39,36 +45,52 @@ func (u *Usecase) GetSeries(seriesId int) (*entity.Series, template.HTML, error)
 		charts.WithLegendOpts(
 			opts.Legend{
 				Show: true,
-				Top:  "20%",
+			},
+		),
+		charts.WithTooltipOpts(
+			opts.Tooltip{
+				Show:      true,
+				Enterable: true,
+			},
+		),
+		charts.WithXAxisOpts(
+			opts.XAxis{
+				Type: "time",
 			},
 		),
 		charts.WithAnimation(),
-		charts.WithTooltipOpts(
-			opts.Tooltip{
-				Show: true,
+		charts.WithDataZoomOpts(
+			opts.DataZoom{
+				Type:  "slider",
+				Start: 0,
+				End:   10,
 			},
 		),
 	)
 
-	bar.SetXAxis(
-		util.Map[entity.Point, time.Time](points, func(p entity.Point) time.Time {
-			return p.Time
-		}),
-	).
-		AddSeries(
+	for series, points := range pointsOfSeries {
+		plot.AddSeries(
 			series.Name,
 			util.Map[entity.Point, opts.LineData](points, func(p entity.Point) opts.LineData {
-				return opts.LineData{Value: p.Value}
+				return opts.LineData{Name: p.Time.Format(time.RFC3339), Value: []interface{}{p.Time, p.Value}}
 			}),
-		).
-		SetSeriesOptions(charts.WithLineChartOpts(opts.LineChart{Smooth: true}))
-
-	var buf bytes.Buffer
-	err = bar.Render(&buf)
-	if err != nil {
-		return nil, template.HTML(""), err
+			charts.WithLineChartOpts(
+				opts.LineChart{
+					Smooth:     false,
+					ShowSymbol: true,
+					Symbol:     "circle",
+					SymbolSize: 10,
+				},
+			),
+		)
 	}
 
-	return &series, template.HTML(buf.String()), nil
+	var buf bytes.Buffer
+	err = plot.Render(&buf)
+	if err != nil {
+		return template.HTML(""), err
+	}
+
+	return template.HTML(buf.String()), nil
 
 }

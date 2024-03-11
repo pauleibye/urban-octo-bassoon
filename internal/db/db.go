@@ -25,9 +25,24 @@ func GetSeries(db *sqlx.DB, seriesId int) (entity.Series, error) {
 
 func GetPointsOfSeries(db *sqlx.DB, seriesId int) ([]entity.Point, error) {
 	var points []entity.Point
-	err := db.Select(&points, `SELECT * FROM point WHERE series_id=$1`, seriesId)
+	err := db.Select(&points, `SELECT * FROM point WHERE series_id=$1 order by time asc`, seriesId)
 	if err != nil {
 		return nil, err
 	}
 	return points, nil
+}
+
+func GetSeriesOfChart(db *sqlx.DB, chartId int) ([]entity.Series, error) {
+	var series []entity.Series
+	query := `
+	select s.*
+	from chart_series cs
+	join series s on s.id = cs.series_id
+	where cs.chart_id=$1
+	`
+	err := db.Select(&series, query, chartId)
+	if err != nil {
+		return nil, err
+	}
+	return series, nil
 }
